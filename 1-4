@@ -1,0 +1,186 @@
+<style>
+body{background:#E9F5EF;}
+h1 {
+	text-align: center;
+	color:#3d85c6;
+	font-family: "Comic Sans MS" ;
+}
+	h2{
+	font-family: "Comic Sans MS","STLiti",sans-serif;
+	color:#3d85c6;
+	font-size: 48px;}
+
+p {
+	white-space: pre-wrap;
+	/*text-align: center;*/
+	font-family: "Comic Sans MS","STLiti",sans-serif;
+	/*最后一个单词保证了字体自选*/
+	font-size: 24px;
+	font-weight: bolder;
+	color: rgb(85,85,85);
+}
+
+code {  
+  color: #3d85c6;
+  /*background-color: rgba(255,255,255,0.1);*/
+  font-family: "Comic Sans MS" ; 
+  padding: 2px 4px;
+  font-size: 90%;
+  /*color: #c7254e;*/
+  background-color: #f9f2f4;
+  border-radius: 4px;
+}
+
+pre{
+  /*font-size: 28px;*/
+  font-family: "Comic Sans MS";
+  color: #3d85c6;
+  margin: 20px;
+  height: 500px;
+  background-color: rgba(255,255,255,0.1); 
+  white-space: pre-wrap;
+  overflow: auto;
+}
+
+.codehilite
+{background-color: #f9f9f9;}
+
+
+img:hover {
+	opacity: 0.5;
+}
+ 
+img {
+	width: 600px;
+	height: 800px;
+}
+/*a:link{color: red;}*/
+/*a:hover{color: blue;}*/
+/*a:visited{color: green;}*/
+
+</style>
+[TOC]
+#My Python Code
+
+##1.图片网页的图片并写入Markdown文档
+前提条件
+*网页是静态网，无登录验证
+
+*由requests抓取的`r.text`可以无乱码的print出来
+	
+	#-*-coding:UTF-8-*-
+	
+	import requests
+	from bs4 import BeautifulSoup
+	from collections import deque
+
+	linkpool = deque()
+	mtext = []
+
+	r = requests.get('http://guo.lu/')
+	rtext = r.text
+	soup = BeautifulSoup(rtext,"html.parser",from_encoding='utf-8')
+	abox = soup.find_all("img")
+
+	for eacha in abox:
+		link = eacha["src"]
+		link = "![](%s)"%link
+		linkpool.append(link)
+
+	mtext = str(linkpool)
+	mtext = mtext.replace("', '","\n")
+
+	f = open('C:/Users/keepd/Documents/mycode/new.md','w',encoding="UTF-8")
+	f.write(mtext)
+	f.close
+
+##2.循环获取图片网页的标签a中的链接地址
+前提条件
+*rtext无乱码，是html文档
+
+实现效果
+*集合seenpool里面是不重复的已阅连接，队列linkpool里是待发掘的不重复的link
+	
+	#-*-coding:UTF-8-*-
+
+	import requests,re
+	from bs4 import BeautifulSoup
+	from collections import deque
+
+	linkpool = deque()
+	seenpool = set()
+	inilink = 'http://guo.lu/'
+	linkpool.append(inilink)
+
+	counter = 0
+	while linkpool and counter<=2:
+		
+		now = linkpool.popleft()
+		r = requests.get(now)
+		r.encoding="utf-8"
+		rtext = r.text	
+
+		soup = BeautifulSoup(rtext,"html.parser")
+		abox = soup.find_all("a",href=re.compile(r"^http://guo.lu"))
+		
+		for eacha in abox:
+			link = eacha["href"]
+			if link not in seenpool:
+				seenpool |= {link}
+				linkpool.append(link)
+				print(link)
+			else:
+				continue 
+
+		counter = counter+1	
+
+	seenpool = str(seenpool)
+	linkpool = str(linkpool)
+	print(seenpool,linkpool,counter)
+
+##3.天天美剧的单页百度网盘资源写入Markdown文档
+	#-*-coding:UTF-8-*-
+
+	import requests,re
+	from bs4 import BeautifulSoup
+
+	now ='http://www.ttmeiju.com/meiju/Shameless.html'
+	r = requests.get(now)
+	rtext = r.text	
+	soup = BeautifulSoup(rtext,"html.parser")
+	abox = soup.find_all("a",href=re.compile(r"^http://pan.baidu.com"))
+
+	with open('C:/Users/keepd/Documents/mycode/new.md','w',encoding='utf-8')as f:
+		i=1
+		for eacha in abox:
+			link = eacha["href"]
+			f.write("[网盘连接"+str(i)+"]("+str(link)+")</br>")
+			i +=1
+##4.对于1的优化
+
+*应对`r.text`解码出状况，直接定义`r.encoding="utf-8"`
+
+*在进行BeautifulSoup的`.find_all()`时，直接筛选出带路径`src`的<code>&lt;img&gt;</code>
+	
+	#-*-coding:UTF-8-*-
+
+	import requests,re
+	from bs4 import BeautifulSoup
+	from collections import deque
+	linkpool = deque()
+	mtext = []
+	r = requests.get('http://j.news.163.com/docs/27/2016031601/BI8800TL051684TB.html')
+	r.encoding="utf-8"
+	rtext = r.text
+	soup = BeautifulSoup(rtext,"html.parser",from_encoding='utf-8')
+	abox = soup.find_all("img",src=re.compile("jpg$"))
+	for eacha in abox:
+	    link = eacha["src"]
+	    link = "![](%s)"%link
+	    linkpool.append(link)
+	  
+	mtext = str(linkpool)
+	mtext = mtext.replace("', '","\n")
+	f = open('C:/Users/keepd/Documents/mycode/new.md','w',encoding="UTF-8")
+	f.write(mtext)
+	f.close
